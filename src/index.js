@@ -1,4 +1,7 @@
 import { Observable } from 'rxjs';
+import print from './print';
+
+print();
 
 const observable = new Observable(subscriber => {
   subscriber.next(1);
