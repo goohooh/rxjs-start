@@ -1,22 +1,48 @@
-import { Observable } from 'rxjs';
-import print from './print';
+import { Observable, of, interval } from 'rxjs';
+import { map, first } from 'rxjs/operators';
 
-print();
+map(x => x * x)(of(1,2,3)).subscribe(console.log);
 
-const observable = new Observable(subscriber => {
-  subscriber.next(1);
-  subscriber.next(2);
-  subscriber.next(3);
-  setTimeout(() => {
-    subscriber.next(4);
-    subscriber.complete();
-  }, 1000);
+// first()(of(1,2,3)).subscribe(console.log)
+
+// const observable = interval(2000);
+// observable.subscribe(console.log)
+
+function delay(delayInMillis) {
+    return observable => new Observable(observer => {
+        const allTimerIDs = new Set();
+        const subscription = observable.subscribe({
+            next(value) {
+                const timerID = setTimeout(() => {
+                    observer.next(value);
+                    allTimerIDs.delete(timerID);
+                }, delayInMillis);
+                allTimerIDs.add(timerID);
+            },
+            error(err) {
+                observer.error(err);
+            },
+            complete() {
+                observer.complete();
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe();
+            allTimerIDs.forEach(timerID => {
+                clearTimeout(timerID);
+            })
+        }
+    })
+}
+const obs = of(1,2,3);
+// obs.subscribe({
+//     next(v) { console.log(v) },
+//     error(err) {console.error(err)},
+//     complete() { console.log('complete!')}
+// });
+delay(3000)(obs).subscribe({
+    next(v) { console.log(v) },
+    error(err) {console.error(err)},
+    complete() { console.log('complete!')}
 });
-
-console.log('just before subscribe');
-observable.subscribe({
-  next(x) { console.log('got value ' + x); },
-  error(err) { console.error('something wrong occurred: ' + err); },
-  complete() { console.log('done'); }
-});
-console.log('just after subscribe');
